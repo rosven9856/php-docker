@@ -36,6 +36,23 @@ jobs:
             rosven9856/basic-php-fpm-alpine:${{ github.event.release.tag_name }}
             rosven9856/basic-php-fpm-alpine:latest
 
+      - name: create release in rosven9856/docker_php repository
+        env:
+          GH_TOKEN: ${{ secrets._GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/rosven9856/docker_php/releases \
+            -f tag_name='${{ github.event.release.tag_name }}' \
+            -f target_commitish='master' \
+            -f name='${{ github.event.release.tag_name }}' \
+            -f body='' \
+            -F draft=false \
+            -F prerelease=false \
+            -F generate_release_notes=false
+
       - name: send telegram message
         uses: appleboy/telegram-action@master
         with:
