@@ -47,4 +47,4 @@ jobs:
             Repository: ${{ github.repository }}
             Release: ${{ github.event.release.tag_name }}
 
-            See details: https://github.com/${{ github.repository }}/actions
+            See details: https://github.com/${{ github.repository }}/releases
