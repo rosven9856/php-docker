@@ -14,4 +14,4 @@ RUN apk add --no-cache libzip-dev \
 
 RUN docker-php-ext-install phar
 
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer --version=2.7.3
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer --version=2.7.2
