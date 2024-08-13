@@ -1,4 +1,4 @@
-FROM php:8.3.9-fpm-alpine
+FROM php:8.3.10-fpm-alpine
 
 RUN apk update
 RUN apk add --no-cache curl curl-dev zip unzip
