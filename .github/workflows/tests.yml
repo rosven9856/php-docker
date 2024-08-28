@@ -1,8 +1,8 @@
-name: test semantic versioning
+name: tests
 
 on:
   push:
-    branches: ['semantic-versioning']
+    branches: ['*']
 
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -19,16 +19,18 @@ jobs:
         id: dotenv
       - run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         id: git
+      - run: echo "version=$(echo ${{ steps.dotenv.outputs.PHP_VERSION }} | grep -oP '^\d+\.\d+\.\d+')" >> $GITHUB_OUTPUT
+        id: version
       - uses: docker/metadata-action@v5
         id: meta
         with:
           images: |
             rosven9856/php
           tags: |
-            type=raw,priority=100,value=8.3.10-${{ steps.git.outputs.sha_short }}
-            type=semver,priority=200,pattern={{version}},value=8.3.10
-            type=semver,priority=300,pattern={{major}}.{{minor}},value=8.3.10
-            type=semver,priority=400,pattern={{major}},value=8.3.10
+            type=raw,priority=100,value=${{ steps.version.outputs.version }}-${{ steps.git.outputs.sha_short }}
+            type=semver,priority=200,pattern={{version}},value=${{ steps.version.outputs.version }}
+            type=semver,priority=300,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
+            type=semver,priority=400,pattern={{major}},value=${{ steps.version.outputs.version }}
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
