@@ -11,11 +11,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-        id: vars
       - uses: actions/checkout@v4
         with:
           ref: ${{env.BRANCH}}
+      - run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        id: vars
       - uses: docker/metadata-action@v5
         id: meta
         with:
