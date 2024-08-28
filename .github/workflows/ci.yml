@@ -27,7 +27,7 @@ jobs:
           images: |
             rosven9856/php
           tags: |
-            type=raw,priority=100,value=${{ steps.version.outputs.version }}-${{ steps.git.outputs.sha_short }}
+            type=raw,priority=100,value=${{ github.event.release.tag_name }}
             type=semver,priority=200,pattern={{version}},value=${{ steps.version.outputs.version }}
             type=semver,priority=300,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
             type=semver,priority=400,pattern={{major}},value=${{ steps.version.outputs.version }}
@@ -41,7 +41,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          push: false
+          push: true
           build-args: |
             PHP_VERSION=${{ steps.dotenv.outputs.PHP_VERSION }}
             COMPOSER_VERSION=${{ steps.dotenv.outputs.COMPOSER_VERSION }}
