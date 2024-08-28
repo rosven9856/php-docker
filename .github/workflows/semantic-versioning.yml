@@ -16,13 +16,16 @@ jobs:
           ref: ${{env.BRANCH}}
       - run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         id: vars
+      - run: cp .env.dist .env
+      - uses: falti/dotenv-action@v1
+        id: dotenv
       - uses: docker/metadata-action@v5
         id: meta
         with:
           images: |
             rosven9856/php
           tags: |
-            type=raw,priority=100,value=8.3.10-build-${{ steps.vars.outputs.sha_short }}
+            type=raw,priority=100,value=8.3.10-${{ steps.vars.outputs.sha_short }}
             type=semver,priority=200,pattern={{version}},value=8.3.10
             type=semver,priority=300,pattern={{major}}.{{minor}},value=8.3.10
             type=semver,priority=400,pattern={{major}},value=8.3.10
@@ -37,6 +40,6 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
+          build-args: |
+            PHP_VERSION=${{ steps.dotenv.outputs.PHP_VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
-      - run: echo ${{ steps.meta.outputs.tags }}
-      - run: echo ${{ steps.meta.outputs.labels }}
