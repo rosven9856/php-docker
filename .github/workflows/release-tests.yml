@@ -49,6 +49,7 @@ jobs:
             COMPOSER_VERSION=${{ steps.dotenv.outputs.COMPOSER_VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
       - name: Create release in rosven9856/php-docker repository
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets._GITHUB_TOKEN }}
         run: |
