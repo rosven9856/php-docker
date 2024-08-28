@@ -4,13 +4,33 @@ on:
   release:
     types: [published]
 
+env:
+  BRANCH: master
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{env.BRANCH}}
+      - run: cp .env.dist .env
+      - uses: falti/dotenv-action@v1
+        id: dotenv
+      - run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        id: git
+      - run: echo "version=$(echo ${{ github.event.release.tag_name }} | grep -oP '^\d+\.\d+\.\d+')" >> $GITHUB_OUTPUT
+        id: version
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            rosven9856/php
+          tags: |
+            type=raw,priority=100,value=${{ steps.version.outputs.version }}-${{ steps.git.outputs.sha_short }}
+            type=semver,priority=200,pattern={{version}},value=${{ steps.version.outputs.version }}
+            type=semver,priority=300,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
+            type=semver,priority=400,pattern={{major}},value=${{ steps.version.outputs.version }}
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -21,10 +41,11 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          push: true
-          tags: |
-            rosven9856/php:${{ github.event.release.tag_name }}
-            rosven9856/php:latest
+          push: false
+          build-args: |
+            PHP_VERSION=${{ steps.dotenv.outputs.PHP_VERSION }}
+            COMPOSER_VERSION=${{ steps.dotenv.outputs.COMPOSER_VERSION }}
+          tags: ${{ steps.meta.outputs.tags }}
       - name: Create release in rosven9856/php-extended-docker repository
         env:
           GH_TOKEN: ${{ secrets._GITHUB_TOKEN }}
@@ -32,7 +53,6 @@ jobs:
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
             /repos/rosven9856/php-extended-docker/releases \
             -f tag_name='${{ github.event.release.tag_name }}' \
             -f target_commitish='master' \

@@ -1,8 +1,10 @@
-name: tests
+name: release tests
 
 on:
+  pull_request:
+    branches: ['master']
   push:
-    branches: ['*']
+    branches: ['master']
 
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -46,3 +48,18 @@ jobs:
             PHP_VERSION=${{ steps.dotenv.outputs.PHP_VERSION }}
             COMPOSER_VERSION=${{ steps.dotenv.outputs.COMPOSER_VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
+      - name: Create release in rosven9856/php-docker repository
+        env:
+          GH_TOKEN: ${{ secrets._GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/rosven9856/php-docker/releases \
+            -f tag_name='${{ steps.version.outputs.version }}-${{ steps.git.outputs.sha_short }}' \
+            -f target_commitish='master' \
+            -f name='${{ steps.version.outputs.version }}-${{ steps.git.outputs.sha_short }}' \
+            -f body='' \
+            -F draft=false \
+            -F prerelease=false \
+            -F generate_release_notes=false
