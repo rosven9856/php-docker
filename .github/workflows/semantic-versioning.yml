@@ -42,4 +42,5 @@ jobs:
           push: false
           build-args: |
             PHP_VERSION=${{ steps.dotenv.outputs.PHP_VERSION }}
+            COMPOSER_VERSION=${{ steps.dotenv.outputs.COMPOSER_VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
