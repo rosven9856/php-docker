@@ -20,6 +20,7 @@ jobs:
           images: |
             rosven9856/php
           tags: |
+            type=raw,value=8.3.10+build-${{ github.sha }}
             type=semver,pattern={{version}},value=8.3.10
             type=semver,pattern={{major}}.{{minor}},value=8.3.10
             type=semver,pattern={{major}},value=8.3.10
