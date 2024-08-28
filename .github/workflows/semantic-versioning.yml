@@ -20,7 +20,7 @@ jobs:
           images: |
             rosven9856/php
           tags: |
-            type=semver,pattern={{version}}
+            type=semver,pattern={{version}},value=8.3.10
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
       - uses: docker/setup-qemu-action@v3
