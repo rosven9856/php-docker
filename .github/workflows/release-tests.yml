@@ -1,11 +1,13 @@
-name: CI
+name: release tests
 
 on:
-  release:
-    types: [published]
+  pull_request:
+    branches: ['master']
+  push:
+    branches: ['master']
 
 env:
-  BRANCH: master
+  BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   build:
@@ -19,7 +21,7 @@ jobs:
         id: dotenv
       - run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         id: git
-      - run: echo "version=$(echo ${{ github.event.release.tag_name }} | grep -oP '^\d+\.\d+\.\d+')" >> $GITHUB_OUTPUT
+      - run: echo "version=$(echo ${{ steps.dotenv.outputs.PHP_VERSION }} | grep -oP '^\d+\.\d+\.\d+')" >> $GITHUB_OUTPUT
         id: version
       - uses: docker/metadata-action@v5
         id: meta
@@ -46,29 +48,19 @@ jobs:
             PHP_VERSION=${{ steps.dotenv.outputs.PHP_VERSION }}
             COMPOSER_VERSION=${{ steps.dotenv.outputs.COMPOSER_VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
-      - name: Create release in rosven9856/php-extended-docker repository
+      - name: Create release in rosven9856/php-docker repository
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets._GITHUB_TOKEN }}
         run: |
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
-            /repos/rosven9856/php-extended-docker/releases \
-            -f tag_name='${{ github.event.release.tag_name }}' \
+            /repos/rosven9856/php-docker/releases \
+            -f tag_name='${{ steps.version.outputs.version }}-${{ steps.git.outputs.sha_short }}' \
             -f target_commitish='master' \
-            -f name='${{ github.event.release.tag_name }}' \
+            -f name='${{ steps.version.outputs.version }}-${{ steps.git.outputs.sha_short }}' \
             -f body='' \
             -F draft=false \
             -F prerelease=false \
             -F generate_release_notes=false
-      - uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            Github. Creating new release php
-            
-            Repository: ${{ github.repository }}
-            Release: ${{ github.event.release.tag_name }}
-
-            See details: https://github.com/${{ github.repository }}/releases
