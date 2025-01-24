@@ -21,6 +21,8 @@ jobs:
         id: git
       - run: echo "version=$(echo ${{ github.event.release.tag_name }} | grep -oP '^\d+\.\d+\.\d+')" >> $GITHUB_OUTPUT
         id: version
+      - run: echo $(date '+%Y%m%d%H%M%S') | grep -oP '^\d+\.\d+\.\d+')" >> $GITHUB_OUTPUT
+        id: date
       - uses: docker/metadata-action@v5
         id: meta
         with:
@@ -54,9 +56,9 @@ jobs:
             --method POST \
             -H "Accept: application/vnd.github+json" \
             /repos/rosven9856/php-extended-docker/releases \
-            -f tag_name='${{ github.event.release.tag_name }}' \
+            -f tag_name='${{ steps.version.outputs.version }}+${{ steps.version.outputs.date }}' \
             -f target_commitish='master' \
-            -f name='${{ github.event.release.tag_name }}' \
+            -f name='${{ github.event.release.version }}+${{ steps.version.outputs.date }}' \
             -f body='' \
             -F draft=false \
             -F prerelease=false \
