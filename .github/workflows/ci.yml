@@ -21,7 +21,7 @@ jobs:
         id: git
       - run: echo "version=$(echo ${{ github.event.release.tag_name }} | grep -oP '^\d+\.\d+\.\d+')" >> $GITHUB_OUTPUT
         id: version
-      - run: echo $(date '+%Y%m%d%H%M%S') | grep -oP '^\d+\.\d+\.\d+')" >> $GITHUB_OUTPUT
+      - run: echo "date=$(date '+%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
         id: date
       - uses: docker/metadata-action@v5
         id: meta
