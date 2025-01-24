@@ -56,9 +56,9 @@ jobs:
             --method POST \
             -H "Accept: application/vnd.github+json" \
             /repos/rosven9856/php-extended-docker/releases \
-            -f tag_name='${{ steps.version.outputs.version }}+${{ steps.version.outputs.date }}' \
+            -f tag_name='${{ steps.version.outputs.version }}-${{ steps.version.outputs.date }}' \
             -f target_commitish='master' \
-            -f name='${{ github.event.release.version }}+${{ steps.version.outputs.date }}' \
+            -f name='${{ github.event.release.version }}-${{ steps.version.outputs.date }}' \
             -f body='' \
             -F draft=false \
             -F prerelease=false \
