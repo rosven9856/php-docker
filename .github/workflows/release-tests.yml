@@ -29,7 +29,7 @@ jobs:
           images: |
             rosven9856/php
           tags: |
-            type=raw,priority=100,value=${{ steps.version.outputs.version }}-${{ steps.git.outputs.sha_short }}
+            type=raw,priority=100,value=${{ steps.version.outputs.version }}+${{ steps.git.outputs.sha_short }}
             type=semver,priority=200,pattern={{version}},value=${{ steps.version.outputs.version }}
             type=semver,priority=300,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
             type=semver,priority=400,pattern={{major}},value=${{ steps.version.outputs.version }}
@@ -57,9 +57,9 @@ jobs:
             --method POST \
             -H "Accept: application/vnd.github+json" \
             /repos/rosven9856/php-docker/releases \
-            -f tag_name='${{ steps.version.outputs.version }}-${{ steps.git.outputs.sha_short }}' \
+            -f tag_name='${{ steps.version.outputs.version }}+${{ steps.git.outputs.sha_short }}' \
             -f target_commitish='master' \
-            -f name='${{ steps.version.outputs.version }}-${{ steps.git.outputs.sha_short }}' \
+            -f name='${{ steps.version.outputs.version }}+${{ steps.git.outputs.sha_short }}' \
             -f body='' \
             -F draft=false \
             -F prerelease=false \
