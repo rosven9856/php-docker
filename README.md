@@ -11,3 +11,25 @@
 [![Docker Image Size](https://img.shields.io/docker/image-size/rosven9856/php/latest)](https://hub.docker.com/r/rosven9856/php)
 
 This docker image was created to optimize builds used in private infrastructure and GitHub Actions
+
+## Developing
+
+build
+```shell
+docker build . -t=php
+```
+
+running php
+```shell
+docker run -it --rm php -v
+```
+
+running pie
+```shell
+docker run -it --rm php pie -v
+```
+
+running composer
+```shell
+docker run -it --rm php composer -v
+```
