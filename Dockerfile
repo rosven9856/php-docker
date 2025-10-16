@@ -1,8 +1,4 @@
-ARG PHP_VERSION
-
-FROM php:$PHP_VERSION
-
-ARG COMPOSER_VERSION
+FROM php:8.3.23-fpm-alpine
 
 RUN apk update
 RUN apk add --no-cache curl curl-dev zip unzip
@@ -18,4 +14,4 @@ RUN apk add --no-cache libzip-dev \
 
 RUN docker-php-ext-install phar
 
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer --version=$COMPOSER_VERSION
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer --version=2.8.10
