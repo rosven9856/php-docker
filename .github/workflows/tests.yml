@@ -91,7 +91,7 @@ jobs:
           echo "major=$MAJOR" >> $GITHUB_OUTPUT
           echo "minor=$MINOR" >> $GITHUB_OUTPUT
           echo "patch=$PATCH" >> $GITHUB_OUTPUT
-      - uses: https://gitea.com/zcube/metadata-action@gitea # docker/metadata-action@v5
+      - uses: docker/metadata-action@v5
         id: meta
         with:
           images: |
