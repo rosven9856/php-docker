@@ -1,0 +1,116 @@
+name: tests
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+  pull_request:
+    branches-ignore:
+      - main
+      - master
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+env:
+  BRANCH: ${{ github.head_ref || github.ref_name }}
+  VERSION: ''
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{env.BRANCH}}
+      - run: cp .env.dist .env
+      - uses: falti/dotenv-action@v1
+        id: dotenv
+      - name: dockerfile parser
+        id: dockerfile_parser
+        run: |
+          FROM="$(grep '^FROM' Dockerfile | head -1 | awk '{print $2}')"
+
+          IMAGE="${FROM%%:*}"
+          TAG="${FROM#*:}"
+
+          printf "RESULT: \n"
+          printf "image = $IMAGE \n"
+          printf "tag = $TAG \n"
+
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+      - name: git
+        id: git
+        run: |
+          SHA_SHORT="$(echo $(git rev-parse --short HEAD))"
+
+          printf "OUTPUTS: \n"
+          printf "sha_short = $SHA_SHORT \n"
+
+          echo "sha_short=$SHA_SHORT" >> $GITHUB_OUTPUT
+      - name: workflow env
+        id: workflow_env
+        run: |
+          VERSION="${{ steps.dockerfile_parser.outputs.tag }}"
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+          printf "ENV: \n"
+          printf "env.VERSION = $VERSION \n"
+      - name: version
+        id: version
+        run: |
+          INPUT="${{env.VERSION}}"
+
+          printf "INPUTS: \n"
+          printf "INPUT = $INPUT \n"
+          printf "\n"
+
+          SEARCH="$(echo "$INPUT" | sed 's/^release\///')"
+          SEM_VERSION="$(echo "$SEARCH" | grep -oP '\d+\.\d+\.\d+' || echo "")"
+
+          TEMP_VERSION=$SEM_VERSION
+          MAJOR=$(echo "$TEMP_VERSION" | cut -d'.' -f1)
+          MINOR=$(echo "$TEMP_VERSION" | cut -d'.' -f2)
+          PATCH=$(echo "$TEMP_VERSION" | cut -d'.' -f3)
+
+          printf "OUTPUTS: \n"
+          printf "search = $SEARCH \n"
+          printf "sem_version = $SEM_VERSION \n"
+          printf "v_sem_version = v$SEM_VERSION \n"
+          printf "major = $MAJOR \n"
+          printf "minor = $MINOR \n"
+          printf "patch = $PATCH \n"
+
+          echo "search=$SEARCH" >> $GITHUB_OUTPUT
+          echo "sem_version=$SEM_VERSION" >> $GITHUB_OUTPUT
+          echo "v_sem_version=v$SEM_VERSION" >> $GITHUB_OUTPUT
+          echo "major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "minor=$MINOR" >> $GITHUB_OUTPUT
+          echo "patch=$PATCH" >> $GITHUB_OUTPUT
+      - uses: https://gitea.com/zcube/metadata-action@gitea # docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            rosven9856/php
+          tags: |
+            type=raw,priority=100,value=${{ steps.version.outputs.sem_version }}+${{ steps.git.outputs.sha_short }}
+            type=semver,priority=200,pattern={{version}},value=${{ steps.version.outputs.sem_version }}
+            type=semver,priority=300,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.sem_version }}
+            type=semver,priority=400,pattern={{major}},value=${{ steps.version.outputs.sem_version }}
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.DOCKER_REGISTRY }}
+          username: rosven9856
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: ${{ steps.meta.outputs.tags }}
+          push: false
