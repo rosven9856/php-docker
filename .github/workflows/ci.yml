@@ -22,7 +22,7 @@ jobs:
       - name: dockerfile parser
         id: dockerfile_parser
         run: |
-          FROM="$(grep '^FROM' Dockerfile | head -1 | awk '{print $2}')"
+          FROM="$(grep '^FROM php' Dockerfile | head -1 | awk '{print $2}')"
 
           IMAGE="${FROM%%:*}"
           TAG="${FROM#*:}"
