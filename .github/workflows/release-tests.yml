@@ -8,6 +8,7 @@ on:
 
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
+  VERSION: ''
 
 jobs:
   build:
@@ -19,20 +20,79 @@ jobs:
       - run: cp .env.dist .env
       - uses: falti/dotenv-action@v1
         id: dotenv
-      - run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: dockerfile parser
+        id: dockerfile_parser
+        run: |
+          FROM="$(grep '^FROM' Dockerfile | head -1 | awk '{print $2}')"
+
+          IMAGE="${FROM%%:*}"
+          TAG="${FROM#*:}"
+
+          printf "RESULT: \n"
+          printf "image = $IMAGE \n"
+          printf "tag = $TAG \n"
+
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+      - name: git
         id: git
-      - run: echo "version=$(echo ${{ steps.dotenv.outputs.PHP_VERSION }} | grep -oP '^\d+\.\d+\.\d+')" >> $GITHUB_OUTPUT
+        run: |
+          SHA_SHORT="$(echo $(git rev-parse --short HEAD))"
+
+          printf "OUTPUTS: \n"
+          printf "sha_short = $SHA_SHORT \n"
+
+          echo "sha_short=$SHA_SHORT" >> $GITHUB_OUTPUT
+      - name: workflow env
+        id: workflow_env
+        run: |
+          VERSION="${{ steps.dockerfile_parser.outputs.tag }}"
+
+          printf "ENV: \n"
+          printf "env.VERSION = $VERSION \n"
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - name: version
         id: version
+        run: |
+          INPUT="${{env.VERSION}}"
+
+          printf "INPUTS: \n"
+          printf "INPUT = $INPUT \n"
+          printf "\n"
+
+          SEARCH="$(echo "$INPUT" | sed 's/^release\///')"
+          SEM_VERSION="$(echo "$SEARCH" | grep -oP '\d+\.\d+\.\d+' || echo "")"
+
+          TEMP_VERSION=$SEM_VERSION
+          MAJOR=$(echo "$TEMP_VERSION" | cut -d'.' -f1)
+          MINOR=$(echo "$TEMP_VERSION" | cut -d'.' -f2)
+          PATCH=$(echo "$TEMP_VERSION" | cut -d'.' -f3)
+
+          printf "OUTPUTS: \n"
+          printf "search = $SEARCH \n"
+          printf "sem_version = $SEM_VERSION \n"
+          printf "v_sem_version = v$SEM_VERSION \n"
+          printf "major = $MAJOR \n"
+          printf "minor = $MINOR \n"
+          printf "patch = $PATCH \n"
+
+          echo "search=$SEARCH" >> $GITHUB_OUTPUT
+          echo "sem_version=$SEM_VERSION" >> $GITHUB_OUTPUT
+          echo "v_sem_version=v$SEM_VERSION" >> $GITHUB_OUTPUT
+          echo "major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "minor=$MINOR" >> $GITHUB_OUTPUT
+          echo "patch=$PATCH" >> $GITHUB_OUTPUT
       - uses: docker/metadata-action@v5
         id: meta
         with:
           images: |
             rosven9856/php
           tags: |
-            type=raw,priority=100,value=${{ steps.version.outputs.version }}+${{ steps.git.outputs.sha_short }}
-            type=semver,priority=200,pattern={{version}},value=${{ steps.version.outputs.version }}
-            type=semver,priority=300,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
-            type=semver,priority=400,pattern={{major}},value=${{ steps.version.outputs.version }}
+            type=raw,priority=100,value=${{ steps.version.outputs.sem_version }}+${{ steps.git.outputs.sha_short }}
+            type=semver,priority=200,pattern={{version}},value=${{ steps.version.outputs.sem_version }}
+            type=semver,priority=300,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.sem_version }}
+            type=semver,priority=400,pattern={{major}},value=${{ steps.version.outputs.sem_version }}
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -44,9 +104,6 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
-          build-args: |
-            PHP_VERSION=${{ steps.dotenv.outputs.PHP_VERSION }}
-            COMPOSER_VERSION=${{ steps.dotenv.outputs.COMPOSER_VERSION }}
           tags: ${{ steps.meta.outputs.tags }}
       - name: Create release in rosven9856/php-docker repository
         if: github.event_name != 'pull_request'
