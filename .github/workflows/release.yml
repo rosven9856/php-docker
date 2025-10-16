@@ -2,16 +2,19 @@ name: release tests
 
 on:
   pull_request:
-    branches: ['master']
-  push:
-    branches: ['master']
+    types:
+      - closed
+    branches:
+      - main
+      - master
 
 env:
   BRANCH: ${{ github.head_ref || github.ref_name }}
   VERSION: ''
 
 jobs:
-  build:
+  docker-build:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -105,8 +108,82 @@ jobs:
           file: ./Dockerfile
           push: false
           tags: ${{ steps.meta.outputs.tags }}
+  release:
+    if: github.event.pull_request.merged == true
+    needs:
+      - docker-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{env.BRANCH}}
+      - run: cp .env.dist .env
+      - uses: falti/dotenv-action@v1
+        id: dotenv
+      - name: dockerfile parser
+        id: dockerfile_parser
+        run: |
+          FROM="$(grep '^FROM' Dockerfile | head -1 | awk '{print $2}')"
+
+          IMAGE="${FROM%%:*}"
+          TAG="${FROM#*:}"
+
+          printf "RESULT: \n"
+          printf "image = $IMAGE \n"
+          printf "tag = $TAG \n"
+
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+      - name: git
+        id: git
+        run: |
+          SHA_SHORT="$(echo $(git rev-parse --short HEAD))"
+
+          printf "OUTPUTS: \n"
+          printf "sha_short = $SHA_SHORT \n"
+
+          echo "sha_short=$SHA_SHORT" >> $GITHUB_OUTPUT
+      - name: workflow env
+        id: workflow_env
+        run: |
+          VERSION="${{ steps.dockerfile_parser.outputs.tag }}"
+
+          printf "ENV: \n"
+          printf "env.VERSION = $VERSION \n"
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - name: version
+        id: version
+        run: |
+          INPUT="${{env.VERSION}}"
+
+          printf "INPUTS: \n"
+          printf "INPUT = $INPUT \n"
+          printf "\n"
+
+          SEARCH="$(echo "$INPUT" | sed 's/^release\///')"
+          SEM_VERSION="$(echo "$SEARCH" | grep -oP '\d+\.\d+\.\d+' || echo "")"
+
+          TEMP_VERSION=$SEM_VERSION
+          MAJOR=$(echo "$TEMP_VERSION" | cut -d'.' -f1)
+          MINOR=$(echo "$TEMP_VERSION" | cut -d'.' -f2)
+          PATCH=$(echo "$TEMP_VERSION" | cut -d'.' -f3)
+
+          printf "OUTPUTS: \n"
+          printf "search = $SEARCH \n"
+          printf "sem_version = $SEM_VERSION \n"
+          printf "v_sem_version = v$SEM_VERSION \n"
+          printf "major = $MAJOR \n"
+          printf "minor = $MINOR \n"
+          printf "patch = $PATCH \n"
+
+          echo "search=$SEARCH" >> $GITHUB_OUTPUT
+          echo "sem_version=$SEM_VERSION" >> $GITHUB_OUTPUT
+          echo "v_sem_version=v$SEM_VERSION" >> $GITHUB_OUTPUT
+          echo "major=$MAJOR" >> $GITHUB_OUTPUT
+          echo "minor=$MINOR" >> $GITHUB_OUTPUT
+          echo "patch=$PATCH" >> $GITHUB_OUTPUT
       - name: Create release in rosven9856/php-docker repository
-        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets._GITHUB_TOKEN }}
         run: |

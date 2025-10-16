@@ -2,7 +2,8 @@ name: CI
 
 on:
   release:
-    types: [published]
+    types:
+      - published
 
 env:
   BRANCH: ${{ github.event.release.target_commitish }}
