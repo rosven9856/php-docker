@@ -114,21 +114,6 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-      - name: Create release in rosven9856/php-extended-docker repository
-        env:
-          GH_TOKEN: ${{ secrets._GITHUB_TOKEN }}
-        run: |
-          gh api \
-            --method POST \
-            -H "Accept: application/vnd.github+json" \
-            /repos/rosven9856/php-extended-docker/releases \
-            -f tag_name='${{ steps.version.outputs.sem_version }}-${{ steps.date.outputs.date }}' \
-            -f target_commitish='master' \
-            -f name='${{ steps.version.outputs.sem_version }}-${{ steps.date.outputs.date }}' \
-            -f body='' \
-            -F draft=false \
-            -F prerelease=false \
-            -F generate_release_notes=false
       - uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
