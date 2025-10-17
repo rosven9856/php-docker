@@ -12,6 +12,17 @@
 
 This docker image was created to optimize builds used in private infrastructure and GitHub Actions
 
+## ⚠️ Repository Archived
+
+> This repository is no longer maintained and has been **archived**.
+
+## ⚠️ Repository Moved
+
+The project has been moved to the [`forge-for-gitea`](https://github.com/forge-for-gitea/) organization and is now available at:
+
+🔗 [https://github.com/forge-for-gitea/php-docker](https://github.com/forge-for-gitea/php-docker)
+
+
 ## Developing
 
 build
